@@ -4,7 +4,7 @@ all: philo
 
 philo:
 	@#@$(CC) $(SRC) $(GN) $(LIB) -g -o philo -Wall -Wextra -Werror -Werror
-	@$(CC) $(SRC) $(GN) $(LIB) -g -o philo -fsanitize=address
+	@$(CC) $(SRC) $(GN) $(LIB) -g -pthread -o philo -fsanitize=address
 clean :
 	@rm -rf philo.o
 fclean : clean
