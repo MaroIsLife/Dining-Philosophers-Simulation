@@ -24,6 +24,7 @@ typedef struct	s_source
 	int		time_to_eat;
 	int		time_to_sleep;
 	int		n_must_eat;
+	long long *philo_last_ate;
 	struct timeval val;
 	struct timezone zone;
 	pthread_mutex_t		*n_forks;

@@ -68,10 +68,51 @@ void	print_philo(int id, char *s)
 	pthread_mutex_unlock(&src->lock);
 }
 
+
+void	print_death(int id)
+{
+	t_source *src;
+
+	src = source_static();
+	
+	pthread_mutex_lock(&src->lock);
+	printf("%d died\n", id + 1);
+	return ;
+	pthread_mutex_unlock(&src->lock);
+
+
+
+
+}
+
+int	last_ate()
+{
+	int	i;
+	t_source *src;
+	
+	src = source_static();
+	while (1)
+	{
+		i = 0;
+		while (i < src->p_num)
+		{
+			if ((get_time() - src->philo_last_ate[i]) >= src->time_to_die)
+			{
+				print_death(i);
+				return (1);
+			}
+			i++;
+		}
+		usleep(15); //Just to not force on the process
+	}
+	return (0);
+}
+
 void	*main_fun(void *arg)
 {
 	t_id *ss;
 	t_source *src;
+
 
 	while (1)
 	{
@@ -81,11 +122,11 @@ void	*main_fun(void *arg)
 		print_philo(ss->p_id,"as taken a fork");
 		pthread_mutex_lock(&src->n_forks[ss->p_id % src->p_num]);
 		print_philo(ss->p_id,"as taken a fork");
+		src->philo_last_ate[ss->p_id - 1] = get_time();
 		print_philo(ss->p_id, "is eating");
 		ft_sleep(src->time_to_eat);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id % src->p_num]);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id - 1]);
-
 		print_philo(ss->p_id, "is sleeping");
 		ft_sleep(src->time_to_sleep);
 		print_philo(ss->p_id, "is thinking");
@@ -94,8 +135,6 @@ void	*main_fun(void *arg)
 
 	return NULL;
 }
-
-
 
 int	main(int ac, char **av)
 {
@@ -110,6 +149,7 @@ int	main(int ac, char **av)
 	init(ac, av, src);
 	ss = malloc(src->p_num * sizeof(t_source));
 	newthread = malloc(src->p_num *sizeof(pthread_t));
+	src->philo_last_ate = malloc(src->p_num * sizeof(long long));
 	i = 0;
 	while(i < src->p_num)
 	{
@@ -119,11 +159,16 @@ int	main(int ac, char **av)
 	i = 0;
 	while (i < src->p_num)
 	{
+		src->philo_last_ate[i] = get_time();
 		pthread_create(&newthread[i], NULL, main_fun, &ss[i]);
 		ft_sleep(100);
 		i++;
 	}
 	i = 0;
+	if (last_ate() == 1)
+	{
+		return (1);
+	}
 	while (i < src->p_num)
 	{
 		pthread_join(newthread[i], NULL);
