@@ -55,16 +55,23 @@ void	ft_sleep(ssize_t time)
 	}
 }
 
-void	print_philo(int id, char *s)
+void	print_philo(int id, char *s, int option)
 {
 	t_source *src;
 	long long		time;
 	struct timeval	val;
+	char			*s1;
 
+	if (option == 1) // green
+		s1 = "\033[0;32m%lld %d %s\033[0m\n";
+	else if (option == 2) // yellow
+		s1 = "\033[0;33m%lld %d %s\033[0m\n";
+	else if (option == 3) // purple
+		s1 = "\033[0;35m%lld %d %s\033[0m\n";
 	src = source_static();
 	pthread_mutex_lock(&src->lock);
 	time = get_time();
-	printf("%lld %d %s\n", time, id, s);
+	printf(s1, time, id, s);
 	pthread_mutex_unlock(&src->lock);
 }
 
@@ -76,7 +83,7 @@ void	print_death(int id)
 	src = source_static();
 	
 	pthread_mutex_lock(&src->lock);
-	printf("%d died\n", id + 1);
+	printf("\033[0;31m%zd %d died\033[0m\n", get_time(),id + 1);
 	return ;
 	pthread_mutex_unlock(&src->lock);
 
@@ -119,31 +126,27 @@ void	*main_fun(void *arg)
 		src = source_static();
 		ss = (t_id *)arg;
 		pthread_mutex_lock(&src->n_forks[ss->p_id - 1]);
-		print_philo(ss->p_id,"as taken a fork");
+		print_philo(ss->p_id,"has taken a fork", 1);
 		pthread_mutex_lock(&src->n_forks[ss->p_id % src->p_num]);
-		print_philo(ss->p_id,"as taken a fork");
+		print_philo(ss->p_id,"has taken a fork", 1);
 		src->philo_last_ate[ss->p_id - 1] = get_time();
-		print_philo(ss->p_id, "is eating");
+		print_philo(ss->p_id, "is eating", 2);
 		ft_sleep(src->time_to_eat);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id % src->p_num]);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id - 1]);
-		print_philo(ss->p_id, "is sleeping");
+		print_philo(ss->p_id, "is sleeping",3);
 		ft_sleep(src->time_to_sleep);
-		print_philo(ss->p_id, "is thinking");
+		print_philo(ss->p_id, "is thinking", 3);
 	}
-
-
 	return NULL;
 }
 
 int	main(int ac, char **av)
 {
 	pthread_t 	*newthread;
-	int i;
-	t_id *ss;
-	t_source *src;
-
-	
+	int 		i;
+	t_id 		*ss;
+	t_source 	*src;
 
 	src = source_static();
 	init(ac, av, src);
@@ -166,9 +169,7 @@ int	main(int ac, char **av)
 	}
 	i = 0;
 	if (last_ate() == 1)
-	{
 		return (1);
-	}
 	while (i < src->p_num)
 	{
 		pthread_join(newthread[i], NULL);
