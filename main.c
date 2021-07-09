@@ -105,10 +105,10 @@ int	last_ate()
 				print_death(i);
 				return (1);
 			}
-			if (src->n_must_eat_v[i] >= src->n_must_eat && src->n_must_eat > 0)
-				d++;
 			i++;
 		}
+		if (src->test >= (src->n_must_eat * src->p_num) && src->n_must_eat > 0)
+			return (1);
 		if (d == src->p_num)
 			return (1);
 		usleep(15);
@@ -133,7 +133,7 @@ void	*main_fun(void *arg)
 		src->philo_last_ate[ss->p_id - 1] = get_time();
 		pthread_mutex_lock(&src->lock);
 		src->n_must_eat_v[ss->p_id - 1]++;
-		printf("%d\n",src->n_must_eat_v[ss->p_id - 1]);
+		src->test++;
 		pthread_mutex_unlock(&src->lock);
 		print_philo(ss->p_id, "is eating", 2);
 		ft_sleep(src->time_to_eat);
@@ -159,6 +159,7 @@ int	main(int ac, char **av)
 	newthread = malloc(src->p_num *sizeof(pthread_t));
 	src->philo_last_ate = malloc(src->p_num * sizeof(int));
 	src->n_must_eat_v = malloc(src->p_num * sizeof(int));
+	src->test = 0;
 	i = 0;
 	while (i < src->p_num)
 	{
