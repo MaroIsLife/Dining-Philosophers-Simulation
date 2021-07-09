@@ -1,4 +1,4 @@
-SRC = main.c ft_my_atoi.c
+SRC = main.c ft_my_atoi.c utils.c
 
 all: philo
 
