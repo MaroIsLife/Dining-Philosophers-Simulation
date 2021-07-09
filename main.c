@@ -26,6 +26,7 @@ void	init(int ac, char **av, t_source *src)
 		src->n_must_eat = ft_my_atoi(av[5]);
 	else
 		src->n_must_eat = 0;
+	src->n_must_eat_v = 0;
 	src->n_forks = malloc(src->p_num * sizeof(pthread_mutex_t));
 	i = 0;
 	while(i < src->p_num)
@@ -35,7 +36,7 @@ void	init(int ac, char **av, t_source *src)
 	}
 }
 
-ssize_t get_time()
+ssize_t	get_time()
 {
 	struct timeval val;
 
@@ -62,11 +63,11 @@ void	print_philo(int id, char *s, int option)
 	struct timeval	val;
 	char			*s1;
 
-	if (option == 1) // green
+	if (option == 1)
 		s1 = "\033[0;32m%lld %d %s\033[0m\n";
-	else if (option == 2) // yellow
+	else if (option == 2)
 		s1 = "\033[0;33m%lld %d %s\033[0m\n";
-	else if (option == 3) // purple
+	else if (option == 3)
 		s1 = "\033[0;35m%lld %d %s\033[0m\n";
 	src = source_static();
 	pthread_mutex_lock(&src->lock);
@@ -84,23 +85,19 @@ void	print_death(int id)
 	
 	pthread_mutex_lock(&src->lock);
 	printf("\033[0;31m%zd %d died\033[0m\n", get_time(),id + 1);
-	return ;
-	pthread_mutex_unlock(&src->lock);
-
-
-
-
 }
 
 int	last_ate()
 {
 	int	i;
 	t_source *src;
+	int	d;
 	
 	src = source_static();
 	while (1)
 	{
 		i = 0;
+		d = 0;
 		while (i < src->p_num)
 		{
 			if ((get_time() - src->philo_last_ate[i]) >= src->time_to_die)
@@ -108,9 +105,13 @@ int	last_ate()
 				print_death(i);
 				return (1);
 			}
+			if (src->n_must_eat_v[i] >= src->n_must_eat && src->n_must_eat > 0)
+				d++;
 			i++;
 		}
-		usleep(15); //Just to not force on the process
+		if (d == src->p_num)
+			return (1);
+		usleep(15);
 	}
 	return (0);
 }
@@ -130,6 +131,10 @@ void	*main_fun(void *arg)
 		pthread_mutex_lock(&src->n_forks[ss->p_id % src->p_num]);
 		print_philo(ss->p_id,"has taken a fork", 1);
 		src->philo_last_ate[ss->p_id - 1] = get_time();
+		pthread_mutex_lock(&src->lock);
+		src->n_must_eat_v[ss->p_id - 1]++;
+		printf("%d\n",src->n_must_eat_v[ss->p_id - 1]);
+		pthread_mutex_unlock(&src->lock);
 		print_philo(ss->p_id, "is eating", 2);
 		ft_sleep(src->time_to_eat);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id % src->p_num]);
@@ -152,7 +157,14 @@ int	main(int ac, char **av)
 	init(ac, av, src);
 	ss = malloc(src->p_num * sizeof(t_source));
 	newthread = malloc(src->p_num *sizeof(pthread_t));
-	src->philo_last_ate = malloc(src->p_num * sizeof(long long));
+	src->philo_last_ate = malloc(src->p_num * sizeof(int));
+	src->n_must_eat_v = malloc(src->p_num * sizeof(int));
+	i = 0;
+	while (i < src->p_num)
+	{
+		src->n_must_eat_v[i] = 0;
+		i++;
+	}
 	i = 0;
 	while(i < src->p_num)
 	{
