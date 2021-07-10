@@ -26,7 +26,6 @@ void	init(int ac, char **av, t_source *src)
 		src->n_must_eat = ft_my_atoi(av[5]);
 	else
 		src->n_must_eat = 0;
-	src->n_must_eat_v = 0;
 	src->n_forks = malloc(src->p_num * sizeof(pthread_mutex_t));
 	i = 0;
 	while(i < src->p_num)
@@ -36,30 +35,34 @@ void	init(int ac, char **av, t_source *src)
 	}
 }
 
-ssize_t	get_time()
+ssize_t	get_time(void)
 {
-	struct timeval val;
+	struct timeval	time;
+	ssize_t			test;
 
-	gettimeofday(&val, NULL);
-	return ((val.tv_sec * 1000) + (val.tv_usec / 1000));
+	gettimeofday(&time, NULL);
+	test = time.tv_usec + (time.tv_sec * 1000000);
+	return (test);
 }
-
 
 void	ft_sleep(ssize_t time)
 {
-	ssize_t time_end; //Milliseconds
+	ssize_t	r;
+	ssize_t	mic;
 
-	time_end = get_time() + time;
-	while (get_time() < time_end)
+	mic = get_time();
+	r = time - 60;
+	usleep(r * 1000);
+	while ((get_time() - mic) < (time * 1000))
 	{
-		usleep(100);
+		;	
 	}
 }
 
 void	print_philo(int id, char *s, int option)
 {
-	t_source *src;
-	long long		time;
+	t_source		*src;
+	ssize_t			time;
 	struct timeval	val;
 	char			*s1;
 
@@ -76,23 +79,21 @@ void	print_philo(int id, char *s, int option)
 	pthread_mutex_unlock(&src->lock);
 }
 
-
 void	print_death(int id)
 {
-	t_source *src;
+	t_source	*src;
 
 	src = source_static();
-	
 	pthread_mutex_lock(&src->lock);
-	printf("\033[0;31m%zd %d died\033[0m\n", get_time(),id + 1);
+	printf("\033[0;31m%zd %d died\033[0m\n", get_time(), id + 1);
 }
 
 int	last_ate()
 {
-	int	i;
-	t_source *src;
-	int	d;
-	
+	int			i;
+	t_source	*src;
+	int			d;
+
 	src = source_static();
 	while (1)
 	{
@@ -100,7 +101,7 @@ int	last_ate()
 		d = 0;
 		while (i < src->p_num)
 		{
-			if ((get_time() - src->philo_last_ate[i]) >= src->time_to_die)
+			if ((get_time() - src->philo_last_ate[i]) >= (src->time_to_die * 1000))
 			{
 				print_death(i);
 				return (1);
@@ -118,56 +119,47 @@ int	last_ate()
 
 void	*main_fun(void *arg)
 {
-	t_id *ss;
-	t_source *src;
-
+	t_id		*ss;
+	t_source	*src;
 
 	while (1)
 	{
 		src = source_static();
 		ss = (t_id *)arg;
 		pthread_mutex_lock(&src->n_forks[ss->p_id - 1]);
-		print_philo(ss->p_id,"has taken a fork", 1);
+		print_philo(ss->p_id, "has taken a fork", 1);
 		pthread_mutex_lock(&src->n_forks[ss->p_id % src->p_num]);
-		print_philo(ss->p_id,"has taken a fork", 1);
+		print_philo(ss->p_id, "has taken a fork", 1);
 		src->philo_last_ate[ss->p_id - 1] = get_time();
 		pthread_mutex_lock(&src->lock);
-		src->n_must_eat_v[ss->p_id - 1]++;
 		src->test++;
 		pthread_mutex_unlock(&src->lock);
 		print_philo(ss->p_id, "is eating", 2);
 		ft_sleep(src->time_to_eat);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id % src->p_num]);
 		pthread_mutex_unlock(&src->n_forks[ss->p_id - 1]);
-		print_philo(ss->p_id, "is sleeping",3);
+		print_philo(ss->p_id, "is sleeping", 3);
 		ft_sleep(src->time_to_sleep);
 		print_philo(ss->p_id, "is thinking", 3);
 	}
-	return NULL;
+	return (NULL);
 }
 
 int	main(int ac, char **av)
 {
-	pthread_t 	*newthread;
-	int 		i;
-	t_id 		*ss;
-	t_source 	*src;
+	pthread_t	*newthread;
+	int			i;
+	t_id		*ss;
+	t_source	*src;
 
 	src = source_static();
 	init(ac, av, src);
 	ss = malloc(src->p_num * sizeof(t_source));
-	newthread = malloc(src->p_num *sizeof(pthread_t));
-	src->philo_last_ate = malloc(src->p_num * sizeof(int));
-	src->n_must_eat_v = malloc(src->p_num * sizeof(int));
+	newthread = malloc(src->p_num * sizeof(pthread_t));
+	src->philo_last_ate = malloc(src->p_num * sizeof(ssize_t));
 	src->test = 0;
 	i = 0;
 	while (i < src->p_num)
-	{
-		src->n_must_eat_v[i] = 0;
-		i++;
-	}
-	i = 0;
-	while(i < src->p_num)
 	{
 		ss[i].p_id = i + 1;
 		i++;
@@ -177,7 +169,7 @@ int	main(int ac, char **av)
 	{
 		src->philo_last_ate[i] = get_time();
 		pthread_create(&newthread[i], NULL, main_fun, &ss[i]);
-		ft_sleep(100);
+		usleep(100);
 		i++;
 	}
 	i = 0;
