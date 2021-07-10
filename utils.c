@@ -1,28 +1,80 @@
 #include "philo.h"
 
-void	ft_putchar_fd(char c, int fd)
+void	init(int ac, char **av, t_source *src)
 {
-	write(fd, &c, 1);
+	int	i;
+
+	if (ac > 6 || ac < 5)
+	{
+		printf("Error\n");
+		exit(1);
+	}
+	pthread_mutex_init(&src->lock, NULL);
+	src->p_num = ft_my_atoi(av[1]);
+	src->time_to_die = ft_my_atoi(av[2]);
+	src->time_to_eat = ft_my_atoi(av[3]);
+	src->time_to_sleep = ft_my_atoi(av[4]);
+	if (ac == 6)
+		src->n_must_eat = ft_my_atoi(av[5]);
+	else
+		src->n_must_eat = 0;
+	src->n_forks = malloc(src->p_num * sizeof(pthread_mutex_t));
+	i = 0;
+	while (i < src->p_num)
+	{
+		pthread_mutex_init(&src->n_forks[i], NULL);
+		i++;
+	}
 }
 
-void	ft_putnbr_fd(int n, int fd)
+ssize_t	get_time(void)
 {
-	unsigned int i;
+	struct timeval	time;
+	ssize_t			test;
 
-	if (n < 0)
+	gettimeofday(&time, NULL);
+	test = time.tv_usec + (time.tv_sec * 1000000);
+	return (test);
+}
+
+void	ft_sleep(ssize_t time)
+{
+	ssize_t	r;
+	ssize_t	mic;
+
+	mic = get_time();
+	r = time - 60;
+	usleep(r * 1000);
+	while ((get_time() - mic) < (time * 1000))
 	{
-		ft_putchar_fd('-', fd);
-		i = (unsigned int)(n * -1);
 	}
-	else
-	{
-		i = n;
-	}
-	if (i >= 10)
-	{
-		ft_putnbr_fd(i / 10, fd);
-		ft_putchar_fd(i % 10 + '0', fd);
-	}
-	else
-		ft_putchar_fd(i + '0', fd);
+}
+
+void	print_philo(int id, char *s, int option)
+{
+	t_source		*src;
+	ssize_t			time;
+	struct timeval	val;
+	char			*s1;
+
+	if (option == 1)
+		s1 = "\033[0;32m%lld %d %s\033[0m\n";
+	else if (option == 2)
+		s1 = "\033[0;33m%lld %d %s\033[0m\n";
+	else if (option == 3)
+		s1 = "\033[0;35m%lld %d %s\033[0m\n";
+	src = source_static();
+	pthread_mutex_lock(&src->lock);
+	time = get_time();
+	printf(s1, time, id, s);
+	pthread_mutex_unlock(&src->lock);
+}
+
+void	print_death(int id)
+{
+	t_source	*src;
+
+	src = source_static();
+	pthread_mutex_lock(&src->lock);
+	printf("\033[0;31m%zd %d died\033[0m\n", get_time(), id + 1);
 }
