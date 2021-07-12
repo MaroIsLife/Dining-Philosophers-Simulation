@@ -53,8 +53,8 @@ void	ft_sleep(ssize_t time)
 void	print_philo(int id, char *s, int option)
 {
 	t_source		*src;
-	ssize_t			time;
-	struct timeval	val;
+	struct timeval	time;
+	ssize_t			test;
 	char			*s1;
 
 	if (option == 1)
@@ -65,8 +65,9 @@ void	print_philo(int id, char *s, int option)
 		s1 = "\033[0;35m%lld %d %s\033[0m\n";
 	src = source_static();
 	pthread_mutex_lock(&src->lock);
-	time = get_time();
-	printf(s1, time, id, s);
+	gettimeofday(&time, NULL);
+	test = (time.tv_usec / 1000) + (time.tv_sec * 1000);
+	printf(s1, test, id, s);
 	pthread_mutex_unlock(&src->lock);
 }
 
