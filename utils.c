@@ -73,9 +73,13 @@ void	print_philo(int id, char *s, int option)
 
 void	print_death(int id)
 {
-	t_source	*src;
+	t_source		*src;
+	struct timeval	time;
+	ssize_t			test;
 
 	src = source_static();
 	pthread_mutex_lock(&src->lock);
-	printf("\033[0;31m%zd %d died\033[0m\n", get_time(), id + 1);
+	gettimeofday(&time, NULL);
+	test = (time.tv_usec / 1000) + (time.tv_sec * 1000);
+	printf("\033[0;31m%zd %d died\033[0m\n", test, id + 1);
 }
